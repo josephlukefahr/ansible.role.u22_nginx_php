@@ -11,6 +11,7 @@
   ansible.builtin.apt:
     name: nginx={{u22_nginx_version}}
     state: present
+
 - name: nginx default site content in place
   ansible.builtin.copy:
     src: default
@@ -26,6 +27,14 @@
     owner: root
     group: root
     mode: "0644"
+- name: nginx sites-enabled directory removed
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled
+    state: absent
+- name: nginx sites-enabled empty directory replaced
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled
+    state: directory
 - name: nginx default site enabled
   notify: restart nginx
   ansible.builtin.file:
@@ -85,4 +94,3 @@
     name: nginx
     state: started
     enabled: yes
-    
