@@ -1,0 +1,96 @@
+---
+- name: nginx code signing key in place
+  ansible.builtin.get_url:
+    url: https://nginx.org/keys/nginx_signing.key
+    dest: /etc/apt/trusted.gpg.d/nginx.asc
+- name: nginx apt repository registered
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/trusted.gpg.d/nginx.asc] http://nginx.org/packages/ubuntu {{ansible_distribution_release}} nginx"
+    state: present
+- name: nginx 1.18 installed
+  ansible.builtin.apt:
+    name: nginx=1.18*
+    state: present
+    update_cache: yes
+- name: nginx service enabled
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes
+- name: nginx custom default site content in place
+  ansible.builtin.copy:
+    src: 8080-default
+    dest: /var/www
+    owner: www-data
+    group: www-data
+    mode: '0664'
+- name: nginx site configs in place
+  notify: nginx restart
+  ansible.builtin.copy:
+    src: nginx/sites-available
+    dest: /etc/nginx
+    mode: preserve
+- name: nginx conf.d directory removed
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d
+    state: absent
+- name: nginx conf.d directory replaced
+  notify: nginx restart
+  ansible.builtin.copy:
+    src: nginx/conf.d
+    dest: /etc/nginx
+    mode: preserve
+- name: nginx sites-enabled directory removed
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled
+    state: absent
+- name: nginx sites-enabled directory replaced (empty)
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled
+    state: directory
+- name: 8080-default site config enabled
+  notify: nginx restart
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/8080-default
+    dest: /etc/nginx/sites-enabled/8080-default
+    state: link
+- name: nginx main config reset
+  notify: nginx restart
+  ansible.builtin.copy:
+    src: nginx.conf
+    dest: /etc/nginx
+    mode: '0644'
+- name: php 8.1 installed
+  ansible.builtin.apt:
+    name:
+      - php8.1-fpm
+      - php8.1-cli
+    state: latest
+- name: php 8.1 extensions installed
+  ansible.builtin.apt:
+    name:
+      - php8.1-bcmath
+      - php8.1-curl
+      - php8.1-gd
+      - php8.1-intl
+      - php8.1-mbstring
+      - php8.1-soap
+      - php8.1-xml
+    state: latest
+- name: php8.1-fpm configuration reset
+  notify: php-fpm restart
+  ansible.builtin.copy:
+    src: php.ini
+    dest: /etc/php/8.1/fpm
+    mode: '0644'
+- name: php8.1-cli configuration reset
+  ansible.builtin.copy:
+    src: php.ini
+    dest: /etc/php/8.1/cli
+    mode: '0644'
+- name: composer 2.2 installed
+  ansible.builtin.get_url:
+    url: https://getcomposer.org/download/latest-2.2.x/composer.phar
+    checksum: sha256:https://getcomposer.org/download/latest-2.2.x/composer.phar.sha256sum
+    dest: /usr/local/bin/composer
+    mode: '0755'
