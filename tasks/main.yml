@@ -11,11 +11,6 @@
   ansible.builtin.apt:
     name: nginx={{u22_nginx_version}}
     state: present
-- name: nginx service enabled
-  ansible.builtin.service:
-    name: nginx
-    state: started
-    enabled: yes
 - name: nginx default site content in place
   ansible.builtin.copy:
     src: default
@@ -85,3 +80,9 @@
     owner: root
     group: root
     mode: "0755"
+- name: nginx service enabled
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes
+    
