@@ -27,8 +27,10 @@ server {
         try_files $uri $uri/ =404;
     }
     location ~ \.php$ {
-        fastcgi_pass fastcgi_backend;
+        include fastcgi_params;
         fastcgi_buffers 16 16k;
         fastcgi_buffer_size 32k;
+        fast_cgi_index index.php        
+        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
     }
 }
