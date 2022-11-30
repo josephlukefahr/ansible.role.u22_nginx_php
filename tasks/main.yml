@@ -7,90 +7,81 @@
   ansible.builtin.apt_repository:
     repo: "deb [signed-by=/etc/apt/trusted.gpg.d/nginx.asc] http://nginx.org/packages/ubuntu {{ansible_distribution_release}} nginx"
     state: present
-- name: nginx 1.18 installed
+- name: nginx installed
   ansible.builtin.apt:
-    name: nginx=1.18*
+    name: nginx={{u22_nginx_version}}
     state: present
-    update_cache: yes
 - name: nginx service enabled
   ansible.builtin.service:
     name: nginx
     state: started
     enabled: yes
-- name: nginx custom default site content in place
+- name: nginx default site content in place
   ansible.builtin.copy:
-    src: 8080-default
+    src: default
     dest: /var/www
     owner: www-data
     group: www-data
-    mode: '0664'
-- name: nginx site configs in place
-  notify: nginx restart
-  ansible.builtin.copy:
-    src: nginx/sites-available
-    dest: /etc/nginx
-    mode: preserve
-- name: nginx conf.d directory removed
+    mode: "0664"
+- name: nginx default site config in place
+  notify: restart nginx
+  ansible.builtin.template:
+    src: default
+    dest: /etc/nginx/sites-available
+    owner: root
+    group: root
+    mode: "0644"
+- name: nginx default site enabled
+  notify: restart nginx
   ansible.builtin.file:
-    path: /etc/nginx/conf.d
-    state: absent
-- name: nginx conf.d directory replaced
-  notify: nginx restart
-  ansible.builtin.copy:
-    src: nginx/conf.d
-    dest: /etc/nginx
-    mode: preserve
-- name: nginx sites-enabled directory removed
-  ansible.builtin.file:
-    path: /etc/nginx/sites-enabled
-    state: absent
-- name: nginx sites-enabled directory replaced (empty)
-  ansible.builtin.file:
-    path: /etc/nginx/sites-enabled
-    state: directory
-- name: 8080-default site config enabled
-  notify: nginx restart
-  ansible.builtin.file:
-    src: /etc/nginx/sites-available/8080-default
-    dest: /etc/nginx/sites-enabled/8080-default
+    src: /etc/nginx/sites-available/default
+    dest: /etc/nginx/sites-enabled/default
     state: link
-- name: nginx main config reset
-  notify: nginx restart
-  ansible.builtin.copy:
+- name: nginx main config in place
+  notify: restart nginx
+  ansible.builtin.template:
     src: nginx.conf
     dest: /etc/nginx
-    mode: '0644'
-- name: php 8.1 installed
+    owner: root
+    group: root
+    mode: "0644"
+- name: php-fpm installed
   ansible.builtin.apt:
     name:
-      - php8.1-fpm
-      - php8.1-cli
+      - php{{u22_php_version}}-fpm
+      - php{{u22_php_version}}-cli
     state: latest
-- name: php 8.1 extensions installed
+- name: php extensions installed
   ansible.builtin.apt:
     name:
-      - php8.1-bcmath
-      - php8.1-curl
-      - php8.1-gd
-      - php8.1-intl
-      - php8.1-mbstring
-      - php8.1-soap
-      - php8.1-xml
+      - php{{u22_php_version}}-bcmath
+      - php{{u22_php_version}}-curl
+      - php{{u22_php_version}}-gd
+      - php{{u22_php_version}}-intl
+      - php{{u22_php_version}}-mbstring
+      - php{{u22_php_version}}-soap
+      - php{{u22_php_version}}-xml
     state: latest
-- name: php8.1-fpm configuration reset
-  notify: php-fpm restart
-  ansible.builtin.copy:
+- name: php-fpm configuration in place
+  notify: restart php-fpm
+  ansible.builtin.template:
     src: php.ini
-    dest: /etc/php/8.1/fpm
-    mode: '0644'
-- name: php8.1-cli configuration reset
-  ansible.builtin.copy:
+    dest: /etc/php/{{u22_php_version}}/fpm
+    owner: root
+    group: root
+    mode: "0644"
+- name: php-cli configuration in place
+  ansible.builtin.template:
     src: php.ini
-    dest: /etc/php/8.1/cli
-    mode: '0644'
-- name: composer 2.2 installed
+    dest: /etc/php/{{u22_php_version}}/cli
+    owner: root
+    group: root
+    mode: "0644"
+- name: composer downloaded as system binary
   ansible.builtin.get_url:
-    url: https://getcomposer.org/download/latest-2.2.x/composer.phar
-    checksum: sha256:https://getcomposer.org/download/latest-2.2.x/composer.phar.sha256sum
+    url: https://getcomposer.org/download/{{u22_composer_version}}/composer.phar
+    checksum: sha256:https://getcomposer.org/download/{{u22_composer_version}}/composer.phar.sha256sum
     dest: /usr/local/bin/composer
-    mode: '0755'
+    owner: root
+    group: root
+    mode: "0755"
