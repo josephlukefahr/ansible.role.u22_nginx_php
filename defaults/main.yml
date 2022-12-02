@@ -1,5 +1,4 @@
 ---
 u22_nginx_version: 1.18.*
-u22_nginx_default_server: default
 u22_php_version: 8.1
 u22_composer_version: latest-2.2.x
