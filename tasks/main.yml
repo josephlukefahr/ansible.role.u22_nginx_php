@@ -11,8 +11,11 @@
   ansible.builtin.apt:
     name: nginx={{u22_nginx_version}}
     state: present
-
-- name: nginx default site content in place
+- name: nginx default site content removed
+  ansible.builtin.file:
+    path: /var/www/default
+    state: absent
+- name: nginx default site content replaced
   ansible.builtin.copy:
     src: default
     dest: /var/www
